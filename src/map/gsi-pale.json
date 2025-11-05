@@ -1,0 +1,20 @@
+{
+  "version": 8,
+  "sources": {
+    "gsi-ortho": {
+      "type": "raster",
+      "tiles": ["https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"],
+      "tileSize": 256,
+      "attribution": "<a href=\"https://www.gsi.go.jp/gazochosa/gazochosa40001.html\" target=\"_blank\">国土地理院</a>"
+    }
+  },
+  "layers": [
+    {
+      "id": "gsi-ortho",
+      "type": "raster",
+      "source": "gsi-ortho",
+      "minzoom": 0,
+      "maxzoom": 24
+    }
+  ]
+}
