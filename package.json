@@ -10,9 +10,11 @@
     "fmt": "biome format --write .",
     "fix": "biome check --write .",
     "lint": "biome lint .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "gh-pages": "^6.3.0",
     "jotai": "^2.15.0",
     "lucide-react": "^0.542.0",
     "maplibre-gl": "^5.11.0",
