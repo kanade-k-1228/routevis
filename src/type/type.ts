@@ -9,4 +9,5 @@ export interface Route {
   name: string;
   color: string;
   waypoints: Waypoint[];
+  visible: boolean;
 }

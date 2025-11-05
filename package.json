@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "homepage": "https://kanade-k-1228.github.io/routevis/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

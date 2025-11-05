@@ -45,6 +45,7 @@ export const RouteMap: FC = () => {
     >
       {routesGeoJson.map((geoJson, index) => {
         const route = routes[index];
+        if (!route.visible) return null;
         return (
           <Source
             key={route.id}
@@ -66,7 +67,7 @@ export const RouteMap: FC = () => {
       })}
 
       {routes.map((route) => {
-        if (route.waypoints.length === 0) return null;
+        if (route.waypoints.length === 0 || !route.visible) return null;
 
         return (
           <Source

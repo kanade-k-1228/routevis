@@ -1,4 +1,5 @@
 import { useAtom } from "jotai";
+import { Menu, Upload } from "lucide-react";
 import type { FC } from "react";
 import { useId, useState } from "react";
 import { routesAtom } from "@/state/state";
@@ -34,6 +35,7 @@ export const App: FC = () => {
   const [routes, setRoutes] = useAtom(routesAtom);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isRouteListVisible, setIsRouteListVisible] = useState(true);
   const fileInputId = useId();
 
   const handleFiles = (files: FileList) => {
@@ -75,6 +77,7 @@ export const App: FC = () => {
             name: file.name.replace(".json", ""),
             color: generateColor(routes.length + index),
             waypoints: data.waypoints,
+            visible: true,
           };
 
           setRoutes((prev) => [...prev, newRoute]);
@@ -145,21 +148,7 @@ export const App: FC = () => {
                     : "border-slate-600 bg-slate-700 hover:border-blue-500 hover:bg-slate-600"
                 }`}
               >
-                <svg
-                  className="mb-3 h-12 w-12 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <title>Upload icon</title>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
+                <Upload className="mb-3 h-12 w-12 text-slate-400" />
                 <span className="mb-2 text-sm text-slate-300">
                   Click or drag & drop JSON files
                 </span>
@@ -189,7 +178,18 @@ export const App: FC = () => {
       ) : (
         <>
           <RouteMap />
-          <RouteList />
+          {isRouteListVisible ? (
+            <RouteList onToggle={() => setIsRouteListVisible(false)} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsRouteListVisible(true)}
+              className="absolute left-4 top-4 rounded-lg bg-slate-800/95 p-3 shadow-2xl backdrop-blur-sm transition-colors hover:bg-slate-700"
+              title="Show route list"
+            >
+              <Menu className="h-6 w-6 text-white" />
+            </button>
+          )}
           {isDragging && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-blue-900/30 backdrop-blur-sm">
               <div className="rounded-lg bg-slate-800 p-8 text-2xl font-bold text-white shadow-2xl">
