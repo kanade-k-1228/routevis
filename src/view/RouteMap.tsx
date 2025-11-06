@@ -12,7 +12,6 @@ import {
   routesAtom,
 } from "@/state/route";
 import { mapStyleAtom } from "@/state/style";
-import { MapStyleSelector } from "./MapStyleSelector";
 
 export const RouteMap: FC = () => {
   const routes = useAtomValue(routesAtom);
@@ -76,24 +75,21 @@ export const RouteMap: FC = () => {
   }, [routes]);
 
   return (
-    <>
-      <MapStyleSelector />
-      <MapLibre
-        ref={mapRef}
-        initialViewState={{
-          longitude: 139.815,
-          latitude: 35.61,
-          zoom: 10,
-        }}
-        style={{ width: "100%", height: "100%" }}
-        mapStyle={mapStyle}
-        attributionControl={false}
-      >
-        {routes.map((id) => (
-          <RouteLayer key={id} id={id} />
-        ))}
-      </MapLibre>
-    </>
+    <MapLibre
+      ref={mapRef}
+      initialViewState={{
+        longitude: 139.815,
+        latitude: 35.61,
+        zoom: 10,
+      }}
+      style={{ width: "100%", height: "100%" }}
+      mapStyle={mapStyle}
+      attributionControl={false}
+    >
+      {routes.map((id) => (
+        <RouteLayer key={id} id={id} />
+      ))}
+    </MapLibre>
   );
 };
 

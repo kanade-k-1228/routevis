@@ -11,3 +11,5 @@ export const MAPS: Record<string, StyleSpecification> = {
   "osm-default": osmDefaultStyle as StyleSpecification,
   "osm-dark": osmDarkStyle as StyleSpecification,
 };
+
+export const MAPIDS = Object.keys(MAPS);

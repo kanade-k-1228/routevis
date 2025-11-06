@@ -4,6 +4,7 @@ import type { FC } from "react";
 import { useCallback, useId, useState } from "react";
 import { routesAtom, useAddRoute } from "@/state/route";
 import type { Route } from "@/type/type";
+import { MapStyleSelector } from "./MapStyleSelector";
 import { RouteList } from "./RouteList";
 import { RouteMap } from "./RouteMap";
 
@@ -173,6 +174,7 @@ export const App: FC = () => {
       ) : (
         <>
           <RouteMap />
+          <MapStyleSelector />
           <RouteList />
           {isDragging && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-blue-900/30 backdrop-blur-sm">
