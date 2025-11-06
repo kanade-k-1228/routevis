@@ -1,9 +1,9 @@
-import { useAtom } from "jotai";
-import { Menu, Upload } from "lucide-react";
+import { useAtomValue } from "jotai";
+import { Upload } from "lucide-react";
 import type { FC } from "react";
-import { useId, useState } from "react";
-import { routesAtom } from "@/state/state";
-import type { Route, RouteData } from "@/type/type";
+import { useId, useState, useCallback } from "react";
+import { routesAtom, useAddRoute } from "@/state/state";
+import type { Route } from "@/type/type";
 import { RouteList } from "./RouteList";
 import { RouteMap } from "./RouteMap";
 
@@ -32,55 +32,55 @@ const generateId = () => crypto.randomUUID();
 const generateColor = (index: number) => COLORS[index % COLORS.length];
 
 export const App: FC = () => {
-  const [routes, setRoutes] = useAtom(routesAtom);
+  const routes = useAtomValue(routesAtom);
+  const addRoute = useAddRoute();
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isRouteListVisible, setIsRouteListVisible] = useState(true);
   const fileInputId = useId();
 
-  const handleFiles = (files: FileList) => {
-    Array.from(files).forEach((file, index) => {
-      if (!file.name.endsWith(".json")) {
-        setError(`${file.name} is not a JSON file`);
-        return;
-      }
+  const handleFiles = useCallback(
+    async (files: FileList) => {
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
+        if (!file.name.endsWith(".json")) {
+          setError(`${file.name} is not a JSON file`);
+          continue;
+        }
+
         try {
-          const text = e.target?.result as string;
-          const data = JSON.parse(text) as RouteData;
+          const text = await file.text();
+          const data = JSON.parse(text) as Route;
 
           // Validate data structure
-          if (!data.waypoints || !Array.isArray(data.waypoints)) {
+          if (!data.log || !Array.isArray(data.log)) {
             throw new Error(
-              `${file.name}: Invalid format - 'waypoints' array is required`,
+              `${file.name}: Invalid format - 'log' array is required`,
             );
           }
 
-          if (
-            data.waypoints.some(
-              (wp) =>
-                !Array.isArray(wp) ||
-                wp.length !== 2 ||
-                typeof wp[0] !== "number" ||
-                typeof wp[1] !== "number",
-            )
-          ) {
+          if (!data.path || !Array.isArray(data.path)) {
             throw new Error(
-              `${file.name}: Invalid format - each waypoint must be [latitude, longitude]`,
+              `${file.name}: Invalid format - 'path' array is required`,
             );
           }
 
-          const newRoute: Route = {
-            id: generateId(),
-            name: file.name.replace(".json", ""),
+          if (!data.plan || !Array.isArray(data.plan)) {
+            throw new Error(
+              `${file.name}: Invalid format - 'plan' array is required`,
+            );
+          }
+
+          // Generate a new ID for this route
+          const newId = generateId();
+          const config = {
             color: generateColor(routes.length + index),
-            waypoints: data.waypoints,
             visible: true,
           };
 
-          setRoutes((prev) => [...prev, newRoute]);
+          // Add the route using the hook
+          addRoute({ id: newId, data, config });
+
           setError(null);
         } catch (err) {
           setError(
@@ -89,15 +89,10 @@ export const App: FC = () => {
               : `${file.name}: Failed to parse JSON`,
           );
         }
-      };
-
-      reader.onerror = () => {
-        setError(`${file.name}: Failed to read file`);
-      };
-
-      reader.readAsText(file);
-    });
-  };
+      }
+    },
+    [routes.length, addRoute],
+  );
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -153,7 +148,7 @@ export const App: FC = () => {
                   Click or drag & drop JSON files
                 </span>
                 <span className="text-xs text-slate-400">
-                  Format: {"{"}"waypoints": [[lat, lon], ...]{"}"}
+                  Format: {"{"}"log": [...], "path": [...], "plan": [...]{"}"}
                 </span>
                 <span className="mt-2 text-xs text-slate-500">
                   Multiple files supported
@@ -178,18 +173,7 @@ export const App: FC = () => {
       ) : (
         <>
           <RouteMap />
-          {isRouteListVisible ? (
-            <RouteList onToggle={() => setIsRouteListVisible(false)} />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsRouteListVisible(true)}
-              className="absolute left-4 top-4 rounded-lg bg-slate-800/95 p-3 shadow-2xl backdrop-blur-sm transition-colors hover:bg-slate-700"
-              title="Show route list"
-            >
-              <Menu className="h-6 w-6 text-white" />
-            </button>
-          )}
+          <RouteList />
           {isDragging && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-blue-900/30 backdrop-blur-sm">
               <div className="rounded-lg bg-slate-800 p-8 text-2xl font-bold text-white shadow-2xl">

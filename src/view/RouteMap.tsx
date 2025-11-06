@@ -5,31 +5,69 @@ import type { MapRef, StyleSpecification } from "react-map-gl/maplibre";
 import { Layer, Map as MapLibre, Source } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import mapStyle from "@/map/gsi-ortho.json";
-import { routesAtom, routesGeoJsonAtom, routesRangeAtom } from "@/state/state";
+import {
+  routesAtom,
+  routeDataFamily,
+  routeConfigFamily,
+  routeGeoJSON,
+} from "@/state/state";
 
 export const RouteMap: FC = () => {
   const routes = useAtomValue(routesAtom);
-  const routesGeoJson = useAtomValue(routesGeoJsonAtom);
-  const routesRange = useAtomValue(routesRangeAtom);
   const mapRef = useRef<MapRef>(null);
 
+  // Fit bounds based on all route data
   useEffect(() => {
     if (mapRef.current && routes.length > 0) {
-      const { lat, lng } = routesRange;
+      // We'll use a timeout to ensure data is loaded
+      const timer = setTimeout(() => {
+        // Get all route data from localStorage directly
+        let latMin = Infinity;
+        let latMax = -Infinity;
+        let lngMin = Infinity;
+        let lngMax = -Infinity;
+        let hasData = false;
 
-      // Add padding to the bounds
-      const latPadding = (lat[1] - lat[0]) * 0.1 || 0.01;
-      const lngPadding = (lng[1] - lng[0]) * 0.1 || 0.01;
+        routes.forEach((id) => {
+          const storedData = localStorage.getItem(`route-data-${id}`);
+          if (storedData) {
+            try {
+              const data = JSON.parse(storedData);
+              if (data.log && Array.isArray(data.log)) {
+                data.log.forEach(([, , lat, lng]: number[]) => {
+                  if (typeof lat === "number" && typeof lng === "number") {
+                    hasData = true;
+                    if (lat < latMin) latMin = lat;
+                    if (lat > latMax) latMax = lat;
+                    if (lng < lngMin) lngMin = lng;
+                    if (lng > lngMax) lngMax = lng;
+                  }
+                });
+              }
+            } catch (e) {
+              console.error(`Failed to parse route data for ${id}`, e);
+            }
+          }
+        });
 
-      mapRef.current.fitBounds(
-        [
-          [lng[0] - lngPadding, lat[0] - latPadding],
-          [lng[1] + lngPadding, lat[1] + latPadding],
-        ],
-        { padding: 50, duration: 1000 },
-      );
+        if (hasData && mapRef.current) {
+          // Add padding to the bounds
+          const latPadding = (latMax - latMin) * 0.1 || 0.01;
+          const lngPadding = (lngMax - lngMin) * 0.1 || 0.01;
+
+          mapRef.current.fitBounds(
+            [
+              [lngMin - lngPadding, latMin - latPadding],
+              [lngMax + lngPadding, latMax + latPadding],
+            ],
+            { padding: 50, duration: 1000 },
+          );
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
-  }, [routes, routesRange]);
+  }, [routes]);
 
   return (
     <MapLibre
@@ -43,61 +81,68 @@ export const RouteMap: FC = () => {
       mapStyle={mapStyle as StyleSpecification}
       attributionControl={false}
     >
-      {routesGeoJson.map((geoJson, index) => {
-        const route = routes[index];
-        if (!route.visible) return null;
-        return (
-          <Source
-            key={route.id}
-            id={`route-${route.id}`}
-            type="geojson"
-            data={geoJson}
-          >
-            <Layer
-              id={`route-line-${route.id}`}
-              type="line"
-              paint={{
-                "line-color": route.color,
-                "line-width": 6,
-                "line-opacity": 0.8,
-              }}
-            />
-          </Source>
-        );
-      })}
-
-      {routes.map((route) => {
-        if (route.waypoints.length === 0 || !route.visible) return null;
-
-        return (
-          <Source
-            key={`waypoints-${route.id}`}
-            id={`waypoints-${route.id}`}
-            type="geojson"
-            data={{
-              type: "FeatureCollection",
-              features: route.waypoints.map(([lat, lng]) => ({
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "Point",
-                  coordinates: [lng, lat],
-                },
-              })),
-            }}
-          >
-            <Layer
-              id={`waypoints-layer-${route.id}`}
-              type="circle"
-              paint={{
-                "circle-radius": 1.5,
-                "circle-color": "#ffffff",
-                "circle-opacity": 0.8,
-              }}
-            />
-          </Source>
-        );
-      })}
+      {routes.map((id) => (
+        <RouteLayer key={id} id={id} />
+      ))}
     </MapLibre>
+  );
+};
+
+const RouteLayer: FC<{ id: string }> = ({ id }) => {
+  const route = useAtomValue(routeDataFamily(id));
+  const config = useAtomValue(routeConfigFamily(id));
+  const geoJSON = useAtomValue(routeGeoJSON(id));
+
+  if (!config.visible) return null;
+
+  return (
+    <>
+      <Source
+        key={`route-${id}`}
+        id={`route-${id}`}
+        type="geojson"
+        data={geoJSON}
+      >
+        <Layer
+          id={`route-line-${id}`}
+          type="line"
+          paint={{
+            "line-color": config.color,
+            "line-width": 6,
+            "line-opacity": 0.8,
+          }}
+        />
+      </Source>
+
+      {/* Waypoints */}
+      {route.log.length > 0 && (
+        <Source
+          key={`waypoints-${id}`}
+          id={`waypoints-${id}`}
+          type="geojson"
+          data={{
+            type: "FeatureCollection",
+            features: route.log.map(([, , lat, lng]) => ({
+              type: "Feature",
+              properties: {},
+              geometry: {
+                type: "Point",
+                coordinates: [lng, lat],
+              },
+            })),
+          }}
+        >
+          <Layer
+            id={`waypoints-layer-${id}`}
+            type="circle"
+            paint={{
+              "circle-radius": 1.5,
+              "circle-color": "#ffffff",
+              "circle-opacity": 0.8,
+            }}
+          />
+        </Source>
+      )}
+    </>
   );
 };
