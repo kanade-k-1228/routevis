@@ -2,11 +2,11 @@ import { useAtom, useAtomValue } from "jotai";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import type { FC } from "react";
 import {
-  routesAtom,
-  routeDataFamily,
   routeConfigFamily,
+  routeDataFamily,
+  routesAtom,
   useDeleteRoute,
-} from "@/state/state";
+} from "@/state/route";
 
 export const RouteList: FC = () => {
   const routes = useAtomValue(routesAtom);

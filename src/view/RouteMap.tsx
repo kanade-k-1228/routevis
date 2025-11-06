@@ -1,38 +1,26 @@
 import { useAtomValue } from "jotai";
 import type { FC } from "react";
-import { useEffect, useRef, useState, useMemo } from "react";
-import type { MapRef, StyleSpecification } from "react-map-gl/maplibre";
+import { useEffect, useMemo, useRef } from "react";
+import type { MapRef } from "react-map-gl/maplibre";
 import { Layer, Map as MapLibre, Source } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { MAPS } from "@/map/maps";
 import {
-  routesAtom,
-  routeDataFamily,
   routeConfigFamily,
+  routeDataFamily,
   routeGeoJSON,
-} from "@/state/state";
+  routesAtom,
+} from "@/state/route";
+import { mapStyleAtom } from "@/state/style";
 import { MapStyleSelector } from "./MapStyleSelector";
-
-// Import all map styles
-import gsiOrthoStyle from "@/map/gsi-ortho.json";
-import gsiPaleStyle from "@/map/gsi-pale.json";
-import osmDefaultStyle from "@/map/osm-default.json";
-import osmDarkStyle from "@/map/osm-dark.json";
-
-const MAP_STYLES_DATA: Record<string, StyleSpecification> = {
-  "gsi-ortho": gsiOrthoStyle as StyleSpecification,
-  "gsi-pale": gsiPaleStyle as StyleSpecification,
-  "osm-default": osmDefaultStyle as StyleSpecification,
-  "osm-dark": osmDarkStyle as StyleSpecification,
-};
 
 export const RouteMap: FC = () => {
   const routes = useAtomValue(routesAtom);
   const mapRef = useRef<MapRef>(null);
-  const [currentStyleId, setCurrentStyleId] = useState<string>("gsi-ortho");
-
+  const mapStyleID = useAtomValue(mapStyleAtom);
   const mapStyle = useMemo(() => {
-    return MAP_STYLES_DATA[currentStyleId] || MAP_STYLES_DATA["gsi-ortho"];
-  }, [currentStyleId]);
+    return MAPS[mapStyleID] || MAPS["gsi-pale"];
+  }, [mapStyleID]);
 
   // Fit bounds based on all route data
   useEffect(() => {
@@ -87,16 +75,9 @@ export const RouteMap: FC = () => {
     }
   }, [routes]);
 
-  const handleStyleChange = (styleId: string) => {
-    setCurrentStyleId(styleId);
-  };
-
   return (
     <>
-      <MapStyleSelector
-        currentStyle={currentStyleId}
-        onStyleChange={handleStyleChange}
-      />
+      <MapStyleSelector />
       <MapLibre
         ref={mapRef}
         initialViewState={{

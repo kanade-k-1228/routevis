@@ -1,6 +1,8 @@
-import { Map } from "lucide-react";
+import { useAtom } from "jotai";
+import { MapIcon } from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
+import { mapStyleAtom } from "@/state/style";
 
 interface MapStyle {
   id: string;
@@ -9,21 +11,14 @@ interface MapStyle {
 }
 
 const MAP_STYLES: MapStyle[] = [
-  { id: "gsi-ortho", name: "GSI Ortho", path: "@/map/gsi-ortho.json" },
   { id: "gsi-pale", name: "GSI Pale", path: "@/map/gsi-pale.json" },
-  { id: "osm-default", name: "OSM Default", path: "@/map/osm-default.json" },
+  { id: "gsi-ortho", name: "GSI Ortho", path: "@/map/gsi-ortho.json" },
   { id: "osm-dark", name: "OSM Dark", path: "@/map/osm-dark.json" },
+  { id: "osm-default", name: "OSM Default", path: "@/map/osm-default.json" },
 ];
 
-interface MapStyleSelectorProps {
-  currentStyle: string;
-  onStyleChange: (styleId: string) => void;
-}
-
-export const MapStyleSelector: FC<MapStyleSelectorProps> = ({
-  currentStyle,
-  onStyleChange,
-}) => {
+export const MapStyleSelector: FC = () => {
+  const [currentStyle, setCurrentStyle] = useAtom(mapStyleAtom);
   const [isOpen, setIsOpen] = useState(false);
 
   const currentStyleName =
@@ -37,7 +32,7 @@ export const MapStyleSelector: FC<MapStyleSelectorProps> = ({
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 rounded-lg bg-slate-800/95 px-4 py-2 text-sm text-white shadow-2xl backdrop-blur-sm transition-colors hover:bg-slate-700"
         >
-          <Map className="h-4 w-4" />
+          <MapIcon className="h-4 w-4" />
           <span>{currentStyleName}</span>
         </button>
 
@@ -49,7 +44,7 @@ export const MapStyleSelector: FC<MapStyleSelectorProps> = ({
                   key={style.id}
                   type="button"
                   onClick={() => {
-                    onStyleChange(style.id);
+                    setCurrentStyle(style.id);
                     setIsOpen(false);
                   }}
                   className={`w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-slate-700 ${
