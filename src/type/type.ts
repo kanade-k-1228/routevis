@@ -1,9 +1,5 @@
 export interface Route {
-  log: Log[];
-  path: Path[];
-  plan: Plan[];
+  route: Point[];
 }
 
-export type Log = [number, number, number, number, number]; // [time, distance, latitude, longitude, bearing]
-export type Path = [number, number, number, number]; // [distance, latitude, longitude, bearing]
-export type Plan = [number, number]; // [time, distance]
+export type Point = [number, number, number, number, number]; // [time, latitude, longitude, bearing, velocity, yawrate]

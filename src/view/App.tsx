@@ -54,21 +54,9 @@ export const App: FC = () => {
           const data = JSON.parse(text) as Route;
 
           // Validate data structure
-          if (!data.log || !Array.isArray(data.log)) {
+          if (!data.route || !Array.isArray(data.route)) {
             throw new Error(
-              `${file.name}: Invalid format - 'log' array is required`,
-            );
-          }
-
-          if (!data.path || !Array.isArray(data.path)) {
-            throw new Error(
-              `${file.name}: Invalid format - 'path' array is required`,
-            );
-          }
-
-          if (!data.plan || !Array.isArray(data.plan)) {
-            throw new Error(
-              `${file.name}: Invalid format - 'plan' array is required`,
+              `${file.name}: Invalid format - 'route' array is required`,
             );
           }
 
@@ -149,7 +137,7 @@ export const App: FC = () => {
                   Click or drag & drop JSON files
                 </span>
                 <span className="text-xs text-slate-400">
-                  Format: {"{"}"log": [...], "path": [...], "plan": [...]{"}"}
+                  Format: {"{"}"route": [[time, lat, lng, bearing, velocity], ...]{"}"}
                 </span>
                 <span className="mt-2 text-xs text-slate-500">
                   Multiple files supported

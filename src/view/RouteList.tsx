@@ -62,8 +62,8 @@ const RouteItem: FC<{ id: string }> = ({ id }) => {
             </h3>
           </div>
           <p className="text-xs text-slate-400">
-            {routeData.log.length} waypoint
-            {routeData.log.length !== 1 ? "s" : ""}
+            {routeData.route.length} waypoint
+            {routeData.route.length !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex gap-1">

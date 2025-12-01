@@ -11,8 +11,5 @@ const types = (name) => ({
 });
 
 module.exports = [
-  types("project"),
-  types("cache"),
-  types("package"),
-  types("platform"),
+  types("type"),
 ];

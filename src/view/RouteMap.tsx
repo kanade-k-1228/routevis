@@ -38,8 +38,8 @@ export const RouteMap: FC = () => {
           if (storedData) {
             try {
               const data = JSON.parse(storedData);
-              if (data.log && Array.isArray(data.log)) {
-                data.log.forEach(([, , lat, lng]: number[]) => {
+              if (data.route && Array.isArray(data.route)) {
+                data.route.forEach(([, , lat, lng]: number[]) => {
                   if (typeof lat === "number" && typeof lng === "number") {
                     hasData = true;
                     if (lat < latMin) latMin = lat;
@@ -120,14 +120,14 @@ const RouteLayer: FC<{ id: string }> = ({ id }) => {
       </Source>
 
       {/* Waypoints */}
-      {route.log.length > 0 && (
+      {route.route.length > 0 && (
         <Source
           key={`waypoints-${id}`}
           id={`waypoints-${id}`}
           type="geojson"
           data={{
             type: "FeatureCollection",
-            features: route.log.map(([, , lat, lng]) => ({
+            features: route.route.map(([, , lat, lng]) => ({
               type: "Feature",
               properties: {},
               geometry: {
