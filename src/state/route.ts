@@ -21,7 +21,7 @@ export const routeRange = atomFamily((id: string) =>
     let lngMin = Infinity;
     let lngMax = -Infinity;
 
-    route.route.forEach(([, , lat, lng]) => {
+    route.route.forEach(([, lat, lng]) => {
       if (lat < latMin) latMin = lat;
       if (lat > latMax) latMax = lat;
       if (lng < lngMin) lngMin = lng;
@@ -44,7 +44,7 @@ export const routeGeoJSON = atomFamily((id: string) =>
       type: "Feature" as const,
       geometry: {
         type: "LineString" as const,
-        coordinates: route.route.map(([, , lat, lng]) => [lng, lat]),
+        coordinates: route.route.map(([, lat, lng]) => [lng, lat]),
       },
       properties: {
         id: id,

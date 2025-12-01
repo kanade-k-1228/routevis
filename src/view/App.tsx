@@ -137,7 +137,8 @@ export const App: FC = () => {
                   Click or drag & drop JSON files
                 </span>
                 <span className="text-xs text-slate-400">
-                  Format: {"{"}"route": [[time, lat, lng, bearing, velocity], ...]{"}"}
+                  Format: {"{"}"route": [[time, lat, lng, bearing, velocity],
+                  ...]{"}"}
                 </span>
                 <span className="mt-2 text-xs text-slate-500">
                   Multiple files supported

@@ -10,6 +10,4 @@ const types = (name) => ({
   output: `src/type/${name}.zod.ts`,
 });
 
-module.exports = [
-  types("type"),
-];
+module.exports = [types("type")];

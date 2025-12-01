@@ -39,7 +39,7 @@ export const RouteMap: FC = () => {
             try {
               const data = JSON.parse(storedData);
               if (data.route && Array.isArray(data.route)) {
-                data.route.forEach(([, , lat, lng]: number[]) => {
+                data.route.forEach(([, lat, lng]: number[]) => {
                   if (typeof lat === "number" && typeof lng === "number") {
                     hasData = true;
                     if (lat < latMin) latMin = lat;
@@ -127,7 +127,7 @@ const RouteLayer: FC<{ id: string }> = ({ id }) => {
           type="geojson"
           data={{
             type: "FeatureCollection",
-            features: route.route.map(([, , lat, lng]) => ({
+            features: route.route.map(([, lat, lng]) => ({
               type: "Feature",
               properties: {},
               geometry: {
