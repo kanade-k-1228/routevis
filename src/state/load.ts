@@ -29,7 +29,7 @@ export const useDialogLoader = () => {
   const loadRouteFile = useRouteFileLoader();
 
   return async () => {
-    const fileHandles = await window.showOpenFilePicker({
+    const fileHandles = await (window as any).showOpenFilePicker({
       types: [
         {
           description: "JSON Files",
@@ -56,6 +56,6 @@ export const useRouteFileLoader = () => {
     const raw = JSON.parse(text);
     const data = routeSchema.parse(raw);
     const id = file.name.replace(/\.[^/.]+$/, "");
-    addRoute({ id, data, config: { color, visible: true } });
+    addRoute({ id, data, config: { color, visible: true, tangent: false } });
   };
 };
