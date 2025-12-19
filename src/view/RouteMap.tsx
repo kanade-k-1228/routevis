@@ -1,14 +1,17 @@
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom, useStore } from "jotai";
 import type { FC } from "react";
 import { useEffect, useMemo, useRef } from "react";
-import type { MapRef } from "react-map-gl/maplibre";
+import type { LngLatBoundsLike, MapRef } from "react-map-gl/maplibre";
 import { Layer, Map as MapLibre, Source } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MAPS } from "@/map/maps";
 import {
+  focusedRouteAtom,
   routeConfigFamily,
   routeDataFamily,
   routeGeoJSON,
+  routeRange,
+  routeTangentGeoJSON,
   routesAtom,
 } from "@/state/route";
 import { mapStyleAtom } from "@/state/style";
@@ -17,62 +20,31 @@ export const RouteMap: FC = () => {
   const routes = useAtomValue(routesAtom);
   const mapRef = useRef<MapRef>(null);
   const mapStyleID = useAtomValue(mapStyleAtom);
+  const focusedRoute = useAtomValue(focusedRouteAtom);
+  const setFocusedRoute = useSetAtom(focusedRouteAtom);
+  const store = useStore();
+
   const mapStyle = useMemo(() => {
     return MAPS[mapStyleID] || MAPS["gsi-pale"];
   }, [mapStyleID]);
 
-  // Fit bounds based on all route data
-  useEffect(() => {
-    if (mapRef.current && routes.length > 0) {
-      // We'll use a timeout to ensure data is loaded
-      const timer = setTimeout(() => {
-        // Get all route data from localStorage directly
-        let latMin = Infinity;
-        let latMax = -Infinity;
-        let lngMin = Infinity;
-        let lngMax = -Infinity;
-        let hasData = false;
-
-        routes.forEach((id) => {
-          const storedData = localStorage.getItem(`route-data-${id}`);
-          if (storedData) {
-            try {
-              const data = JSON.parse(storedData);
-              if (data.route && Array.isArray(data.route)) {
-                data.route.forEach(([, lat, lng]: number[]) => {
-                  if (typeof lat === "number" && typeof lng === "number") {
-                    hasData = true;
-                    if (lat < latMin) latMin = lat;
-                    if (lat > latMax) latMax = lat;
-                    if (lng < lngMin) lngMin = lng;
-                    if (lng > lngMax) lngMax = lng;
-                  }
-                });
-              }
-            } catch (e) {
-              console.error(`Failed to parse route data for ${id}`, e);
-            }
-          }
-        });
-
-        if (hasData && mapRef.current) {
-          // Add padding to the bounds
-          const latPadding = (latMax - latMin) * 0.1 || 0.01;
-          const lngPadding = (lngMax - lngMin) * 0.1 || 0.01;
-
-          mapRef.current.fitBounds(
-            [
-              [lngMin - lngPadding, latMin - latPadding],
-              [lngMax + lngPadding, latMax + latPadding],
-            ],
-            { padding: 50, duration: 1000 },
-          );
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
+  const handleMapMove = () => {
+    if (focusedRoute !== null) {
+      setFocusedRoute(null);
     }
-  }, [routes]);
+  };
+
+  useEffect(() => {
+    if (mapRef.current && focusedRoute) {
+      if (mapRef.current) {
+        const range = store.get(routeRange(focusedRoute));
+        mapRef.current.fitBounds(range as LngLatBoundsLike, {
+          padding: 50,
+          duration: 1000,
+        });
+      }
+    }
+  }, [focusedRoute, store]);
 
   return (
     <MapLibre
@@ -85,6 +57,8 @@ export const RouteMap: FC = () => {
       style={{ width: "100%", height: "100%" }}
       mapStyle={mapStyle}
       attributionControl={false}
+      onDragStart={handleMapMove}
+      onZoomStart={handleMapMove}
     >
       {routes.map((id) => (
         <RouteLayer key={id} id={id} />
@@ -97,6 +71,7 @@ const RouteLayer: FC<{ id: string }> = ({ id }) => {
   const route = useAtomValue(routeDataFamily(id));
   const config = useAtomValue(routeConfigFamily(id));
   const geoJSON = useAtomValue(routeGeoJSON(id));
+  const tangentGeoJSON = useAtomValue(routeTangentGeoJSON(id));
 
   if (!config.visible) return null;
 
@@ -119,31 +94,21 @@ const RouteLayer: FC<{ id: string }> = ({ id }) => {
         />
       </Source>
 
-      {/* Waypoints */}
-      {route.route.length > 0 && (
+      {/* Tangent lines */}
+      {route.route.length > 0 && config.tangent && (
         <Source
-          key={`waypoints-${id}`}
-          id={`waypoints-${id}`}
+          key={`tangent-${id}`}
+          id={`tangent-${id}`}
           type="geojson"
-          data={{
-            type: "FeatureCollection",
-            features: route.route.map(([, lat, lng]) => ({
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "Point",
-                coordinates: [lng, lat],
-              },
-            })),
-          }}
+          data={tangentGeoJSON}
         >
           <Layer
-            id={`waypoints-layer-${id}`}
-            type="circle"
+            id={`tangent-layer-${id}`}
+            type="line"
             paint={{
-              "circle-radius": 1.5,
-              "circle-color": "#ffffff",
-              "circle-opacity": 0.8,
+              "line-color": "#ffffff",
+              "line-width": 2,
+              "line-opacity": 0.8,
             }}
           />
         </Source>

@@ -6,7 +6,6 @@ export const pointSchema = z.tuple([
   z.number(),
   z.number(),
   z.number(),
-  z.number(),
 ]);
 
 export const routeSchema = z.object({

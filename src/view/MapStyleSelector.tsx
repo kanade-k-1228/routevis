@@ -15,7 +15,7 @@ export const MapStyleSelector: FC = () => {
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 rounded-lg bg-slate-800/95 px-4 py-2 text-sm text-white shadow-2xl backdrop-blur-sm transition-colors hover:bg-slate-700"
+          className="flex items-center gap-2 rounded-lg bg-slate-800/95 px-4 py-2 text-sm text-white shadow-2xl backdrop-blur-sm transition-colors hover:bg-slate-700 cursor-pointer"
         >
           <MapIcon className="h-4 w-4" />
           <span>{currentStyle}</span>
@@ -32,7 +32,7 @@ export const MapStyleSelector: FC = () => {
                     setCurrentStyle(id);
                     setIsOpen(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-slate-700 ${
+                  className={`w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-slate-700 cursor-pointer ${
                     currentStyle === id ? "bg-slate-700" : ""
                   }`}
                 >
