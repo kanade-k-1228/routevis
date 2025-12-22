@@ -10,7 +10,7 @@ import {
 } from "@/state/route";
 import { useDialogLoader } from "@/state/load";
 
-export const RouteList: FC = () => {
+export const ListView: FC = () => {
   const routes = useAtomValue(routesAtom);
   const loadRoute = useDialogLoader();
   const focusRoute = useFocusRoute();

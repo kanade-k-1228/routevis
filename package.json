@@ -23,6 +23,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-map-gl": "^8.1.0",
+    "wouter": "^3.9.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {

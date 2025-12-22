@@ -16,7 +16,7 @@ import {
 } from "@/state/route";
 import { mapStyleAtom } from "@/state/style";
 
-export const RouteMap: FC = () => {
+export const MapView: FC = () => {
   const routes = useAtomValue(routesAtom);
   const mapRef = useRef<MapRef>(null);
   const mapStyleID = useAtomValue(mapStyleAtom);
