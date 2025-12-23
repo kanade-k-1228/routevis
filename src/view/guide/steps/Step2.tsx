@@ -81,7 +81,8 @@ export const Step2: FC = () => {
                   Passive Monitoring
                 </h4>
                 <p className="text-gray-300 mb-4">
-                  Start by observing the CAN traffic without sending any messages.
+                  Start by observing the CAN traffic without sending any
+                  messages.
                 </p>
                 <div className="bg-black/50 rounded-lg p-4 font-mono text-sm text-green-400 overflow-x-auto">
                   <pre>{`# Capture all CAN messages
