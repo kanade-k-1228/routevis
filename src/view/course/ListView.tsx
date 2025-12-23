@@ -19,7 +19,7 @@ import {
   waypointsAtom,
 } from "../../state/editor";
 
-export const List: FC = () => {
+export const ListView: FC = () => {
   const [mode, setMode] = useAtom(editorModeAtom);
   const [waypoints, setWaypoints] = useAtom(waypointsAtom);
   const [segments, setSegments] = useAtom(segmentsAtom);

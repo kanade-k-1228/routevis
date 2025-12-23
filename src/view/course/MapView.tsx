@@ -21,8 +21,13 @@ import {
 import { mapStyleAtom } from "../../state/style";
 import type { Waypoint } from "../../type/geometry";
 import { MapStyleSelector } from "../common/MapStyleSelector";
+import {
+  resolveStraight,
+  resolveCorner,
+  generateSegmentPath,
+} from "../../utils/geometry";
 
-export const Map: FC = () => {
+export const MapView: FC = () => {
   const [mode, setMode] = useAtom(editorModeAtom);
   const [waypoints, setWaypoints] = useAtom(waypointsAtom);
   const [segments, setSegments] = useAtom(segmentsAtom);
@@ -179,10 +184,25 @@ export const Map: FC = () => {
     }
 
     const features = [];
+
     for (let i = 0; i < Math.min(segments.length, waypoints.length - 1); i++) {
-      const start = waypoints[i];
-      const end = waypoints[i + 1];
       const segment = segments[i];
+
+      // Resolve segment geometry based on type
+      const resolved =
+        segment.type === "corner" && waypoints.length >= 4
+          ? resolveCorner(waypoints, i, segment.radius)
+          : resolveStraight(waypoints, i);
+
+      // Generate path points for the segment
+      const pathPoints = generateSegmentPath(
+        resolved,
+        segment,
+        segment.type === "corner" ? 50 : 2,
+      );
+
+      // Convert to GeoJSON coordinates [lon, lat]
+      const coordinates = pathPoints.map((point) => [point[1], point[0]]);
 
       features.push({
         type: "Feature" as const,
@@ -193,10 +213,7 @@ export const Map: FC = () => {
         },
         geometry: {
           type: "LineString" as const,
-          coordinates: [
-            [start[1], start[0]], // [lon, lat] for GeoJSON
-            [end[1], end[0]], // [lon, lat] for GeoJSON
-          ],
+          coordinates,
         },
       });
     }

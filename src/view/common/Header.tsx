@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { CarIcon, Edit3, Home } from "lucide-react";
+import { CarIcon } from "lucide-react";
 import type { FC } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -8,7 +8,7 @@ export const Header: FC = () => {
 
   return (
     <header className="bg-slate-900 border-b border-slate-700">
-      <div className="container px-4">
+      <div className="w-full px-4">
         <div className="flex items-center justify-between h-14">
           <Link
             href="/"
@@ -20,30 +20,39 @@ export const Header: FC = () => {
             </h1>
           </Link>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-2">
             <Link
-              href="/view/"
+              href="/routes/"
               className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 rounded transition-colors cursor-pointer",
-                location === "/"
+                "px-4 py-1.5 rounded transition-colors cursor-pointer text-sm",
+                location === "/routes/"
                   ? "bg-blue-600 text-white"
                   : "text-gray-300 hover:bg-slate-700",
               )}
             >
-              <Home size={16} />
-              <span className="text-sm">Visualizer</span>
+              Routes
             </Link>
             <Link
-              href="/edit/"
+              href="/course/"
               className={clsx(
-                "flex items-center gap-2 px-3 py-1.5 rounded transition-colors cursor-pointer",
-                location === "/edit/"
+                "px-4 py-1.5 rounded transition-colors cursor-pointer text-sm",
+                location === "/course/"
                   ? "bg-blue-600 text-white"
                   : "text-gray-300 hover:bg-slate-700",
               )}
             >
-              <Edit3 size={16} />
-              <span className="text-sm">Editor</span>
+              Course
+            </Link>
+            <Link
+              href="/plan/"
+              className={clsx(
+                "px-4 py-1.5 rounded transition-colors cursor-pointer text-sm",
+                location === "/plan/"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-300 hover:bg-slate-700",
+              )}
+            >
+              Plan
             </Link>
           </nav>
         </div>

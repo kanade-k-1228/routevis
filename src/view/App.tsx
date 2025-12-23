@@ -2,7 +2,7 @@ import type { FC } from "react";
 import { Route, Router, Switch } from "wouter";
 import { Footer } from "./common/Footer";
 import { Header } from "./common/Header";
-import { Editor } from "./editor/Editor";
+import { Course } from "./course/Course";
 import { Guide } from "./guide/Guide";
 import { Home } from "./home/Home";
 import { RouteView } from "./route/RouteView";
@@ -16,8 +16,8 @@ export const App: FC = () => {
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/guide/:step" component={Guide} />
-            <Route path="/view/" component={RouteView} />
-            <Route path="/edit/" component={Editor} />
+            <Route path="/routes/" component={RouteView} />
+            <Route path="/course/" component={Course} />
             <Route path="*" component={Home} />
           </Switch>
         </main>
