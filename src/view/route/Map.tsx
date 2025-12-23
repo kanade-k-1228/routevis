@@ -11,8 +11,8 @@ import {
   routeDataFamily,
   routeGeoJSON,
   routeRange,
-  routeTangentGeoJSON,
   routesAtom,
+  routeTangentGeoJSON,
 } from "@/state/route";
 import { mapStyleAtom } from "@/state/style";
 

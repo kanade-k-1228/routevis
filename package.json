@@ -1,9 +1,9 @@
 {
-  "name": "routevis",
+  "name": "adas",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://kanade-k-1228.github.io/routevis/",
+  "homepage": "https://kanade-k-1228.github.io/adas/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -16,6 +16,7 @@
     "zod": "ts-to-zod --all"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "gh-pages": "^6.3.0",
     "jotai": "^2.15.0",
     "lucide-react": "^0.542.0",

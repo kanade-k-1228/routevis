@@ -1,18 +1,29 @@
 import { atom } from "jotai";
-import type { PathSegment } from "../utils/geometry";
+import type { RouteData, Segment, Waypoint } from "@/type/geometry";
+
+// ----------------------------------------------------------------------------
 
 export type EditorMode =
-  | "idle"
-  | "setting-start"
-  | "setting-heading"
-  | "adding-segment";
+  | { mode: "idle" }
+  | { mode: "add-point" }
+  | { mode: "move-point"; idx: number };
 
-export const editorStateAtom = atom<EditorMode>("idle");
+export const editorModeAtom = atom<EditorMode>({ mode: "idle" });
 
-export const originAtom = atom({
-  lat: 35.681236,
-  lon: 139.767125,
-  bearing: 0.0,
-});
+// ----------------------------------------------------------------------------
 
-export const routeAtom = atom<PathSegment[]>([]);
+export const waypointsAtom = atom<Waypoint[]>([]);
+export const segmentsAtom = atom<Segment[]>([]);
+export const selectedWaypointIndexAtom = atom<number>(-1);
+export const selectedSegmentIndexAtom = atom<number>(-1);
+export const routeDataAtom = atom<RouteData>((get) => ({
+  waypoints: get(waypointsAtom),
+  segments: get(segmentsAtom),
+}));
+
+// Map view state for centering on waypoints
+export const mapCenterAtom = atom<{
+  lat: number;
+  lng: number;
+  zoom?: number;
+} | null>(null);

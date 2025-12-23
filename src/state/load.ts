@@ -1,6 +1,6 @@
 import { useAtomValue } from "jotai";
-import { routesAtom, useAddRoute } from "./route";
 import { routeSchema } from "../type/type.zod";
+import { routesAtom, useAddRoute } from "./route";
 
 const COLORS = [
   "#ef4444",

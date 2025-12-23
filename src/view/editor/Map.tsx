@@ -1,146 +1,217 @@
 import "maplibre-gl/dist/maplibre-gl.css";
+import clsx from "clsx";
 import { useAtom, useAtomValue } from "jotai";
 import type { FC } from "react";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import MapGL, {
   Layer,
+  type MapMouseEvent,
   Marker,
   Source,
-  type MapMouseEvent,
 } from "react-map-gl/maplibre";
 import { MAPS } from "../../map/maps";
-import { editorStateAtom, originAtom } from "../../state/editor";
+import {
+  editorModeAtom,
+  mapCenterAtom,
+  segmentsAtom,
+  selectedSegmentIndexAtom,
+  selectedWaypointIndexAtom,
+  waypointsAtom,
+} from "../../state/editor";
 import { mapStyleAtom } from "../../state/style";
-import type { Position, RouteSegment } from "../../utils/geometry";
+import type { Waypoint } from "../../type/geometry";
 import { MapStyleSelector } from "../common/MapStyleSelector";
 
-export const Map: FC<{
-  startPosition: Position | null;
-  routeSegments: RouteSegment[];
-}> = ({ startPosition, routeSegments }) => {
-  const [mode, setMode] = useAtom(editorStateAtom);
-  const [origin, setOrigin] = useAtom(originAtom);
+export const Map: FC = () => {
+  const [mode, setMode] = useAtom(editorModeAtom);
+  const [waypoints, setWaypoints] = useAtom(waypointsAtom);
+  const [segments, setSegments] = useAtom(segmentsAtom);
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useAtom(
+    selectedWaypointIndexAtom,
+  );
+  const [selectedSegmentIndex] = useAtom(selectedSegmentIndexAtom);
   const mapStyleID = useAtomValue(mapStyleAtom);
+  const [mapCenter, setMapCenter] = useAtom(mapCenterAtom);
 
-  const [headingPreview, setHeadingPreview] = useState<number | null>(null);
+  const [hoveredWaypointIndex, setHoveredWaypointIndex] = useState<
+    number | null
+  >(null);
   const [zoom, setZoom] = useState<number>(16);
 
-  const routeSourceId = useId();
-  const arcLayerId = useId();
-  const clothoidLayerId = useId();
+  // Initial center (Tokyo Station area)
+  const [viewState, setViewState] = useState({
+    latitude: 35.681236,
+    longitude: 139.767125,
+    zoom: 16,
+  });
+
+  const waypointsSourceId = useId();
+  const waypointsLayerId = useId();
+  const segmentsSourceId = useId();
+  const segmentsLayerId = useId();
+
+  // Handle Escape key to return to idle mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMode({ mode: "idle" });
+        setSelectedWaypointIndex(-1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [setMode, setSelectedWaypointIndex]);
+
+  // Handle map center changes from List component
+  useEffect(() => {
+    if (mapCenter) {
+      setViewState({
+        latitude: mapCenter.lat,
+        longitude: mapCenter.lng,
+        zoom: mapCenter.zoom || 18,
+      });
+      // Reset the mapCenter atom after using it
+      setMapCenter(null);
+    }
+  }, [mapCenter, setMapCenter]);
 
   // Get map style
   const mapStyle = useMemo(() => {
     return MAPS[mapStyleID] || MAPS["gsi-pale"];
   }, [mapStyleID]);
 
-  // Map click handler
+  // Map click handler for placing waypoints
   const handleMapClick = useCallback(
     (e: MapMouseEvent) => {
       const { lng, lat } = e.lngLat;
 
-      if (mode === "setting-start") {
-        // Set start point mode
-        setOrigin({
-          lat,
-          lon: lng,
-          bearing: 0,
-        });
-        setMode("setting-heading");
-      } else if (mode === "setting-heading") {
-        // Set heading mode
-        const dx = lng - origin.lon;
-        const dy = lat - origin.lat;
-        const heading = ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
+      if (mode.mode === "add-point") {
+        // Add new waypoint as [lat, lon] array
+        const newWaypoint: Waypoint = [lat, lng];
+        setWaypoints((prev) => [...prev, newWaypoint]);
 
-        setOrigin({
-          ...origin,
-          bearing: heading,
+        // Add straight segment automatically when adding second or later waypoints
+        setSegments((prev) => {
+          // Only add segment if this is not the first waypoint
+          if (waypoints.length > 0) {
+            return [...prev, { type: "straight" }];
+          }
+          return prev;
         });
-        setMode("idle");
-        setHeadingPreview(null);
       }
     },
-    [mode, origin, setMode, setOrigin],
+    [mode, setWaypoints, setSegments, waypoints.length],
   );
 
-  // Mouse move preview for heading
-  const handleMapMouseMove = useCallback(
-    (e: MapMouseEvent) => {
-      if (mode === "setting-heading") {
-        const { lng, lat } = e.lngLat;
-        const dx = lng - origin.lon;
-        const dy = lat - origin.lat;
-        const heading = ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
-        setHeadingPreview(heading);
-      }
+  // Waypoint click handler
+  const handleWaypointClick = useCallback(
+    (index: number, e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent map click
+      setSelectedWaypointIndex(index);
     },
-    [mode, origin],
+    [setSelectedWaypointIndex],
   );
 
-  // Generate GeoJSON data with separate arc and clothoid features
-  const generateGeoJSON = useCallback(() => {
-    interface GeoJSONFeature {
-      type: "Feature";
-      properties: { type: string; segmentType: string };
-      geometry: {
-        type: "LineString";
-        coordinates: number[][];
+  // Waypoint drag start handler
+  const handleWaypointDragStart = useCallback(
+    (index: number) => {
+      setMode({ mode: "move-point", idx: index });
+      setSelectedWaypointIndex(index);
+    },
+    [setMode, setSelectedWaypointIndex],
+  );
+
+  // Waypoint drag handler
+  const handleWaypointDrag = useCallback(
+    (index: number, lng: number, lat: number) => {
+      setWaypoints((prev) => {
+        const updated = [...prev];
+        updated[index] = [lat, lng];
+        return updated;
+      });
+    },
+    [setWaypoints],
+  );
+
+  // Waypoint drag end handler
+  const handleWaypointDragEnd = useCallback(
+    (index: number, lng: number, lat: number) => {
+      handleWaypointDrag(index, lng, lat);
+      setMode({ mode: "idle" });
+    },
+    [handleWaypointDrag, setMode],
+  );
+
+  // Generate GeoJSON for waypoints connection lines
+  const waypointLinesGeoJSON = useMemo(() => {
+    if (waypoints.length < 2) {
+      return {
+        type: "FeatureCollection" as const,
+        features: [],
       };
     }
-    const features: GeoJSONFeature[] = [];
 
-    // Add arc and clothoid segments separately for color differentiation
-    routeSegments.forEach((segment) => {
-      // Add arc segment
-      if (segment.arcPoints.length > 0) {
-        const arcCoordinates = segment.arcPoints.map((p) => [p.lon, p.lat]);
-        features.push({
-          type: "Feature",
-          properties: { type: "route", segmentType: "arc" },
-          geometry: {
-            type: "LineString",
-            coordinates: arcCoordinates,
-          },
-        });
-      }
+    const coordinates = waypoints.map((wp) => [wp[1], wp[0]]); // [lon, lat] for GeoJSON
 
-      // Add clothoid segment
-      if (segment.clothoidPoints.length > 0) {
-        const clothoidCoordinates = segment.clothoidPoints.map((p) => [
-          p.lon,
-          p.lat,
-        ]);
-        features.push({
-          type: "Feature",
-          properties: { type: "route", segmentType: "clothoid" },
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {},
           geometry: {
-            type: "LineString",
-            coordinates: clothoidCoordinates,
+            type: "LineString" as const,
+            coordinates,
           },
-        });
-      }
-    });
+        },
+      ],
+    };
+  }, [waypoints]);
+
+  // Generate GeoJSON for segments with different styles
+  const segmentsGeoJSON = useMemo(() => {
+    if (waypoints.length < 2 || segments.length === 0) {
+      return {
+        type: "FeatureCollection" as const,
+        features: [],
+      };
+    }
+
+    const features = [];
+    for (let i = 0; i < Math.min(segments.length, waypoints.length - 1); i++) {
+      const start = waypoints[i];
+      const end = waypoints[i + 1];
+      const segment = segments[i];
+
+      features.push({
+        type: "Feature" as const,
+        properties: {
+          segmentType: segment.type,
+          radius: segment.type === "corner" ? segment.radius : null,
+          index: i,
+        },
+        geometry: {
+          type: "LineString" as const,
+          coordinates: [
+            [start[1], start[0]], // [lon, lat] for GeoJSON
+            [end[1], end[0]], // [lon, lat] for GeoJSON
+          ],
+        },
+      });
+    }
 
     return {
       type: "FeatureCollection" as const,
       features,
     };
-  }, [routeSegments]);
-
-  const routeGeoJSON = generateGeoJSON();
+  }, [waypoints, segments]);
 
   // Calculate marker size based on zoom level
   const markerSize = useMemo(() => {
-    // Base size at zoom 16
-    const baseZoom = 16;
-    const scaleFactor = Math.pow(2, (zoom - baseZoom) * 0.3);
-    const width = Math.round(6 * scaleFactor); // Base width 6px
-    const height = Math.round(12 * scaleFactor); // Base height 12px
-    return {
-      width: Math.min(Math.max(width, 3), 24), // Clamp between 3-24px
-      height: Math.min(Math.max(height, 6), 48), // Clamp between 6-48px
-    };
+    const scaleFactor = 2 ** ((zoom - 16) * 0.3);
+    const size = Math.round(16 * scaleFactor); // Reduced from 24 to 16
+    return Math.min(Math.max(size, 8), 32); // Adjusted min/max to 8/32
   }, [zoom]);
 
   return (
@@ -149,63 +220,97 @@ export const Map: FC<{
       <MapGL
         mapStyle={mapStyle}
         mapLib={import("maplibre-gl")}
-        initialViewState={{
-          latitude: origin.lat,
-          longitude: origin.lon,
-          zoom: 16,
-        }}
+        {...viewState}
+        onMove={(evt) => setViewState(evt.viewState)}
         style={{ width: "100%", height: "100%" }}
         attributionControl={false}
         onClick={handleMapClick}
-        onMouseMove={handleMapMouseMove}
         onZoom={(e) => setZoom(e.viewState.zoom)}
       >
-        {/* Route display with color differentiation */}
-        <Source id={routeSourceId} type="geojson" data={routeGeoJSON}>
-          {/* Arc segments - blue */}
+        {/* Waypoint connection lines */}
+        <Source
+          id={waypointsSourceId}
+          type="geojson"
+          data={waypointLinesGeoJSON}
+        >
           <Layer
-            id={arcLayerId}
+            id={waypointsLayerId}
             type="line"
-            filter={["==", ["get", "segmentType"], "arc"]}
             paint={{
-              "line-color": "#3b82f6", // blue
-              "line-width": 4,
-            }}
-          />
-          {/* Clothoid segments - green */}
-          <Layer
-            id={clothoidLayerId}
-            type="line"
-            filter={["==", ["get", "segmentType"], "clothoid"]}
-            paint={{
-              "line-color": "#10b981", // green
-              "line-width": 4,
+              "line-color": "#6b7280",
+              "line-width": 2,
+              "line-dasharray": [2, 2],
             }}
           />
         </Source>
 
-        {/* Start point marker */}
-        {startPosition && (
-          <Marker longitude={origin.lon} latitude={origin.lat} anchor="center">
-            <div
-              className="flex items-center justify-center relative"
-              style={{
-                transform: `rotate(${
-                  headingPreview !== null ? headingPreview : origin.bearing
-                }deg)`,
-                transformOrigin: "center",
+        {/* Segments with styling */}
+        {segments.length > 0 && (
+          <Source id={segmentsSourceId} type="geojson" data={segmentsGeoJSON}>
+            <Layer
+              id={segmentsLayerId}
+              type="line"
+              paint={{
+                "line-color": [
+                  "case",
+                  ["==", ["get", "segmentType"], "corner"],
+                  "#10b981", // green for corners
+                  "#3b82f6", // blue for straight
+                ],
+                "line-width": [
+                  "case",
+                  ["==", ["get", "index"], selectedSegmentIndex],
+                  6,
+                  4,
+                ],
               }}
-            >
-              <div
-                className="bg-red-500 border border-white absolute"
-                style={{
-                  width: `${markerSize.width}px`,
-                  height: `${markerSize.height}px`,
-                }}
-              />
-            </div>
-          </Marker>
+            />
+          </Source>
         )}
+
+        {/* Waypoint markers */}
+        {waypoints.map((waypoint, index) => (
+          <Marker
+            key={`waypoint-${waypoint[0]}-${waypoint[1]}-${index}`}
+            longitude={waypoint[1]}
+            latitude={waypoint[0]}
+            anchor="center"
+            draggable={true}
+            onDragStart={() => {
+              handleWaypointDragStart(index);
+            }}
+            onDrag={(e) => {
+              const { lng, lat } = e.lngLat;
+              handleWaypointDrag(index, lng, lat);
+            }}
+            onDragEnd={(e) => {
+              const { lng, lat } = e.lngLat;
+              handleWaypointDragEnd(index, lng, lat);
+            }}
+          >
+            <div
+              className={clsx(
+                "cursor-pointer",
+                "rounded-full",
+                "transition-colors duration-200",
+                selectedWaypointIndex === index
+                  ? "bg-red-500"
+                  : hoveredWaypointIndex === index
+                    ? "bg-blue-400"
+                    : "bg-blue-500",
+              )}
+              style={{
+                width: `${markerSize}px`,
+                height: `${markerSize}px`,
+                position: "relative",
+                zIndex: 10,
+              }}
+              onClick={(e) => handleWaypointClick(index, e)}
+              onMouseEnter={() => setHoveredWaypointIndex(index)}
+              onMouseLeave={() => setHoveredWaypointIndex(null)}
+            />
+          </Marker>
+        ))}
       </MapGL>
     </div>
   );

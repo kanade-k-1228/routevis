@@ -1,6 +1,7 @@
 import { useAtom, useAtomValue } from "jotai";
 import { Eye, EyeOff, Tangent, Trash2, Upload } from "lucide-react";
 import type { FC } from "react";
+import { useDialogLoader } from "@/state/load";
 import {
   routeConfigFamily,
   routeDataFamily,
@@ -8,7 +9,6 @@ import {
   useDeleteRoute,
   useFocusRoute,
 } from "@/state/route";
-import { useDialogLoader } from "@/state/load";
 
 export const ListView: FC = () => {
   const routes = useAtomValue(routesAtom);

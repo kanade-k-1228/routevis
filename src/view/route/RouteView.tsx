@@ -1,7 +1,6 @@
 import { useAtomValue } from "jotai";
 import type { FC } from "react";
 import { useCallback, useState } from "react";
-import { Link } from "wouter";
 import { getColor, useRouteFileLoader } from "@/state/load";
 import { routesAtom } from "@/state/route";
 import { MapStyleSelector } from "../common/MapStyleSelector";
